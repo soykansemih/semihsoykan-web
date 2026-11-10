@@ -1,15 +1,8 @@
 
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, createContext, useContext } from 'react';
 import { Language, Translation } from './types';
 import { translations } from './translations';
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import Packages from './components/Packages';
-import Portfolio from './components/Portfolio';
-import About from './components/About';
-import Contact from './components/Contact';
-import MobileApps from './components/MobileApps';
-import Footer from './components/Footer';
+import Experience from './components/Experience';
 
 interface LanguageContextType {
   language: Language;
@@ -31,18 +24,7 @@ const App: React.FC = () => {
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-grow">
-          <Hero />
-          <Packages />
-          <Portfolio />
-          <MobileApps />
-          <About />
-          <Contact />
-        </main>
-        <Footer />
-      </div>
+      <Experience />
     </LanguageContext.Provider>
   );
 };

@@ -4,40 +4,60 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png" />
+    <link rel="apple-touch-icon" href="/favicon-180.png" />
+    <meta name="theme-color" content="#fbeee0" />
     <title>Semih Soykan | Dijital Çözümler</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        scroll-behavior: smooth;
-      }
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: #f1f1f1;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-      }
+      html, body, #root { height: 100%; }
+      body { margin: 0; font-family: 'Nunito', system-ui, sans-serif; background: #fbeee0; color: #3b3348; overflow: hidden; }
+      .font-display { font-family: 'Fredoka', 'Nunito', system-ui, sans-serif; font-weight: 600; }
+      .room-root { position: fixed; inset: 0; overflow: hidden;
+        background: radial-gradient(circle at 12% 30%, #f9e4cf 0 18%, transparent 18.2%), radial-gradient(circle at 88% 85%, #f7dcc4 0 26%, transparent 26.2%), #fbeee0; }
+      .room-top { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+        padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left)); pointer-events: none; }
+      .room-top > * { pointer-events: auto; }
+      .room-menu { position: absolute; left: 50%; transform: translateX(-50%); bottom: max(20px, env(safe-area-inset-bottom));
+        display: flex; gap: 4px; padding: 6px; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-radius: 999px;
+        box-shadow: 0 10px 30px -12px rgba(59,51,72,.35); max-width: calc(100vw - 24px); overflow-x: auto; }
+      .room-menu-item { padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: 14px; color: #6b6070; white-space: nowrap; transition: .2s; }
+      .room-menu-item:hover { background: #fbeee0; color: #3b3348; }
+      .room-menu-item.is-active { background: #fbeee0; color: #3b3348; }
+      .room-menu-item.is-cta { background: #ff7a59; color: #fff; }
+      .room-menu-item.is-cta:hover { background: #f2633f; }
+      .room-hint { position: absolute; right: max(20px, env(safe-area-inset-right)); bottom: max(32px, env(safe-area-inset-bottom)); font-size: 13px; color: #8a7a6c; pointer-events: none; }
+      @media (max-width: 1100px) { .room-hint { display: none; } }
+      @media (max-width: 520px) { .room-menu { gap: 0; padding: 4px; } .room-menu-item { padding: 9px 8px; font-size: 12.5px; } }
+      .room-panel { position: absolute; top: 88px; right: max(20px, env(safe-area-inset-right)); bottom: 96px; width: min(400px, calc(100vw - 40px));
+        background: #fff; border-radius: 28px; padding: 22px; overflow-y: auto; box-shadow: 0 24px 60px -20px rgba(59,51,72,.4);
+        animation: panel-in .35s cubic-bezier(.2,.9,.3,1.2); }
+      .room-panel.is-wide { width: min(540px, calc(100vw - 40px)); }
+      .room-full { position: fixed; inset: 0; z-index: 60; background: rgba(59,51,72,.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 24px; animation: pop .25s ease-out; }
+      .room-full-win { width: min(1400px, 100%); height: min(900px, 100%); background: #fff; border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 30px 80px -20px rgba(0,0,0,.5); }
+      @media (max-width: 640px) { .room-full { padding: 8px; } }
+      @media (max-width: 640px) { .room-panel { top: auto; left: 12px; right: 12px; width: auto; bottom: 84px; max-height: 62vh; } }
+      @keyframes panel-in { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: none; } }
+      .room-tip { background: #3b3348; color: #fff; font-weight: 700; font-size: 13px; padding: 6px 12px; border-radius: 999px; white-space: nowrap; box-shadow: 0 6px 16px -6px rgba(0,0,0,.4); }
+      .room-bubble { background: #fff; color: #3b3348; font-weight: 800; font-size: 14px; padding: 10px 16px; border-radius: 18px; white-space: nowrap;
+        box-shadow: 0 10px 24px -10px rgba(59,51,72,.45); animation: pop .4s cubic-bezier(.2,.9,.3,1.4); cursor: pointer; font-family: 'Nunito', sans-serif; }
+      @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+      .room-input { width: 100%; padding: 12px 16px; border-radius: 16px; background: #fbeee0; border: 2px solid transparent; outline: none; font: inherit; color: #3b3348; }
+      .room-input:focus { border-color: #ff7a59; background: #fff; }
+      .room-btn { display: inline-flex; align-items: center; justify-content: center; padding: 13px 18px; border-radius: 16px; background: #ff7a59; color: #fff; font-weight: 800; transition: .2s; }
+      .room-btn:hover { background: #f2633f; transform: translateY(-1px); }
+      .room-btn:disabled { opacity: .6; }
+      .room-loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: #8a7a6c; font-weight: 700; }
+      .room-loading-box { width: 44px; height: 44px; border-radius: 12px; background: #ff7a59; animation: hop 0.9s ease-in-out infinite; }
+      @keyframes hop { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-18px) rotate(90deg); } }
+      button:focus-visible, a:focus-visible { outline: 3px solid #3b3348; outline-offset: 2px; }
+      @media (prefers-reduced-motion: reduce) { .room-panel, .room-bubble { animation: none; } }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-slate-50 text-slate-900">
+  <body>
     <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
