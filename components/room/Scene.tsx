@@ -7,15 +7,53 @@ import { COLORS, Goal, ME, PanelKind, PanelState, PROJECT_SLOTS } from './spots'
 
 const TARGET = new Vector3(5, 0.9, 5);
 
-/** Keeps the whole room in frame at any screen size. */
+/** Pixels per world unit that fit the whole room on screen. */
+const fullZoom = (w: number, h: number) => Math.min(w / 16, h / 12);
+/** Below this, the room would look too small: zoom in and follow the character instead. */
+const MIN_ZOOM = 52;
+const isFollow = (w: number, h: number) => fullZoom(w, h) < MIN_ZOOM;
+
+/** Sets the zoom: whole room on big screens, a closer view on phones. */
 const Fit: React.FC = () => {
   const { camera, size } = useThree();
   useEffect(() => {
     const cam = camera as OrthographicCamera;
-    const portrait = size.width < size.height;
-    cam.zoom = Math.min(size.width / (portrait ? 19 : 16), size.height / 12);
+    const { width: w, height: h } = size;
+    // On phones show about 7 units across (roughly half the room), so the characters stay readable.
+    cam.zoom = isFollow(w, h) ? Math.max(fullZoom(w, h), Math.min(w / 7, h / 7)) : fullZoom(w, h);
     cam.updateProjectionMatrix();
   }, [camera, size]);
+  return null;
+};
+
+const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+
+/** On small screens the camera glides after the character; on big screens it stays on the room. */
+const Follow: React.FC<{ posRef: React.MutableRefObject<Vector3> }> = ({ posRef }) => {
+  const controls = useThree((s) => s.controls) as unknown as { target: Vector3; update: () => void } | null;
+  const { camera, size } = useThree();
+  const desired = useRef(new Vector3());
+  const delta = useRef(new Vector3());
+  const ready = useRef(false);
+
+  useFrame((_, dt) => {
+    if (!controls) return;
+    if (!ready.current) {
+      controls.target.copy(TARGET);
+      ready.current = true;
+    }
+    const p = posRef.current;
+    if (isFollow(size.width, size.height)) {
+      desired.current.set(clamp(p.x, 2.4, 7.6), TARGET.y, clamp(p.z, 2.4, 7.8));
+    } else {
+      desired.current.copy(TARGET);
+    }
+    const k = 1 - Math.exp(-3.5 * Math.min(dt, 0.1));
+    delta.current.subVectors(desired.current, controls.target).multiplyScalar(k);
+    controls.target.add(delta.current);
+    camera.position.add(delta.current);
+    controls.update();
+  });
   return null;
 };
 
@@ -293,8 +331,9 @@ const Scene: React.FC<Omit<React.ComponentProps<typeof Room>, 'posRef'>> = (prop
     onCreated={({ camera }) => camera.lookAt(TARGET)}
   >
     <Fit />
+    <Follow posRef={posRef} />
     <OrbitControls
-      target={TARGET}
+      makeDefault
       enablePan={false}
       enableZoom={false}
       enableDamping

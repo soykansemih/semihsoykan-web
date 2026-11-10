@@ -21,7 +21,7 @@
       .room-top { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
         padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left)); pointer-events: none; }
       .room-top > * { pointer-events: auto; }
-      .room-menu { position: absolute; left: 50%; transform: translateX(-50%); bottom: max(20px, env(safe-area-inset-bottom));
+      .room-menu { position: absolute; left: 0; right: 0; margin-inline: auto; width: max-content; bottom: max(20px, env(safe-area-inset-bottom));
         display: flex; gap: 4px; padding: 6px; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-radius: 999px;
         box-shadow: 0 10px 30px -12px rgba(59,51,72,.35); max-width: calc(100vw - 24px); overflow-x: auto; }
       .room-menu-item { padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: 14px; color: #6b6070; white-space: nowrap; transition: .2s; }
@@ -31,7 +31,7 @@
       .room-menu-item.is-cta:hover { background: #f2633f; }
       .room-hint { position: absolute; right: max(20px, env(safe-area-inset-right)); bottom: max(32px, env(safe-area-inset-bottom)); font-size: 13px; color: #8a7a6c; pointer-events: none; }
       @media (max-width: 1100px) { .room-hint { display: none; } }
-      @media (max-width: 520px) { .room-menu { gap: 0; padding: 4px; } .room-menu-item { padding: 9px 8px; font-size: 12.5px; } }
+      @media (max-width: 520px) { .room-menu { gap: 0; padding: 4px; width: auto; max-width: none; left: 10px; right: 10px; justify-content: space-between; } .room-menu-item { flex: 1 1 auto; padding: 9px 4px; font-size: 12px; text-align: center; } }
       .room-panel { position: absolute; top: 88px; right: max(20px, env(safe-area-inset-right)); bottom: 96px; width: min(400px, calc(100vw - 40px));
         background: #fff; border-radius: 28px; padding: 22px; overflow-y: auto; box-shadow: 0 24px 60px -20px rgba(59,51,72,.4);
         animation: panel-in .35s cubic-bezier(.2,.9,.3,1.2); }
