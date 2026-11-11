@@ -1,7 +1,7 @@
-import React, { Suspense, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, ThreeEvent, useFrame, useThree } from '@react-three/fiber';
 import { Html, OrbitControls, useCursor, useTexture } from '@react-three/drei';
-import { Mesh, OrthographicCamera, SRGBColorSpace, Vector3 } from 'three';
+import { CanvasTexture, EdgesGeometry, Group, LineBasicMaterial, LineSegments, Mesh, OrthographicCamera, SRGBColorSpace, Vector3 } from 'three';
 import { Me, Player } from './Characters';
 import { COLORS, Goal, ME, PanelKind, PanelState, PROJECT_SLOTS } from './spots';
 
@@ -12,6 +12,8 @@ const fullZoom = (w: number, h: number) => Math.min(w / 16, h / 12);
 /** Below this, the room would look too small: zoom in and follow the character instead. */
 const MIN_ZOOM = 52;
 const isFollow = (w: number, h: number) => fullZoom(w, h) < MIN_ZOOM;
+/** On phones show about 7 units across (roughly half the room), so the characters stay readable. */
+const closeZoom = (w: number, h: number) => Math.max(fullZoom(w, h), Math.min(w / 7, h / 7));
 
 /** Sets the zoom: whole room on big screens, a closer view on phones. */
 const Fit: React.FC = () => {
@@ -19,8 +21,7 @@ const Fit: React.FC = () => {
   useEffect(() => {
     const cam = camera as OrthographicCamera;
     const { width: w, height: h } = size;
-    // On phones show about 7 units across (roughly half the room), so the characters stay readable.
-    cam.zoom = isFollow(w, h) ? Math.max(fullZoom(w, h), Math.min(w / 7, h / 7)) : fullZoom(w, h);
+    cam.zoom = isFollow(w, h) ? closeZoom(w, h) : fullZoom(w, h);
     cam.updateProjectionMatrix();
   }, [camera, size]);
   return null;
@@ -43,8 +44,13 @@ const Follow: React.FC<{ posRef: React.MutableRefObject<Vector3> }> = ({ posRef 
       ready.current = true;
     }
     const p = posRef.current;
-    if (isFollow(size.width, size.height)) {
-      desired.current.set(clamp(p.x, 2.4, 7.6), TARGET.y, clamp(p.z, 2.4, 7.8));
+    const { width: w, height: h } = size;
+    if (isFollow(w, h)) {
+      // Pinch-zoomed out toward the whole room: ease the view back to the room's center.
+      const full = fullZoom(w, h);
+      const close = closeZoom(w, h);
+      const t = clamp(((camera as OrthographicCamera).zoom - full) / Math.max(close - full, 1), 0, 1);
+      desired.current.set(clamp(p.x, 2.4, 7.6), TARGET.y, clamp(p.z, 2.4, 7.8)).lerp(TARGET, 1 - t);
     } else {
       desired.current.copy(TARGET);
     }
@@ -64,21 +70,7 @@ const Box: React.FC<{ p: [number, number, number]; s: [number, number, number]; 
   </mesh>
 );
 
-/** Small bouncing dot that marks something you can click. */
-const Beacon: React.FC<{ y: number }> = ({ y }) => {
-  const m = useRef<Mesh>(null);
-  useFrame(({ clock }) => {
-    if (m.current) m.current.position.y = y + Math.sin(clock.elapsedTime * 3) * 0.08;
-  });
-  return (
-    <mesh ref={m}>
-      <sphereGeometry args={[0.07, 12, 12]} />
-      <meshBasicMaterial color={COLORS.accent} />
-    </mesh>
-  );
-};
-
-/** Wraps an object so it highlights on hover and reacts to clicks. */
+/** Wraps an object so its own edges softly glow, it highlights on hover and reacts to clicks. */
 const Hot: React.FC<{
   position: [number, number, number];
   label: string;
@@ -87,9 +79,57 @@ const Hot: React.FC<{
   children: React.ReactNode;
 }> = ({ position, label, tipY, onSelect, children }) => {
   const [hover, setHover] = useState(false);
+  const group = useRef<Group>(null);
+  const hoverRef = useRef(false);
+  hoverRef.current = hover;
   useCursor(hover);
+
+  // A light line along each mesh's own hard edges (not around the object).
+  const edgeMat = useMemo(
+    () => new LineBasicMaterial({ color: '#fff8ee', transparent: true, opacity: 0.6, depthWrite: false }),
+    []
+  );
+  useEffect(() => () => edgeMat.dispose(), [edgeMat]);
+
+  useEffect(() => {
+    const g = group.current;
+    if (!g) return;
+    const added: LineSegments[] = [];
+    const attach = () => {
+      const meshes: Mesh[] = [];
+      g.traverse((o) => {
+        const m = o as Mesh;
+        if (m.isMesh && !m.userData.hasEdges) meshes.push(m);
+      });
+      meshes.forEach((m) => {
+        const lines = new LineSegments(new EdgesGeometry(m.geometry, 30), edgeMat);
+        lines.raycast = () => {};
+        m.userData.hasEdges = true;
+        m.add(lines);
+        added.push(lines);
+      });
+    };
+    attach();
+    // pick up children that mount later (e.g. the photo texture)
+    const t = setTimeout(attach, 1500);
+    return () => {
+      clearTimeout(t);
+      added.forEach((l) => {
+        if (l.parent) l.parent.userData.hasEdges = false;
+        l.geometry.dispose();
+        l.removeFromParent();
+      });
+    };
+  }, [edgeMat]);
+
+  useFrame(({ clock }) => {
+    const pulse = 0.5 + 0.5 * Math.sin(clock.elapsedTime * 2.4);
+    edgeMat.opacity = hoverRef.current ? 1 : 0.2 + 0.6 * pulse;
+  });
+
   return (
     <group
+      ref={group}
       position={position}
       scale={hover ? 1.06 : 1}
       onPointerOver={(e) => { e.stopPropagation(); setHover(true); }}
@@ -97,12 +137,10 @@ const Hot: React.FC<{
       onClick={(e) => { e.stopPropagation(); if (e.delta > 6) return; onSelect(); }}
     >
       {children}
-      {hover ? (
+      {hover && (
         <Html position={[0, tipY, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[20, 10]}>
           <div className="room-tip">{label}</div>
         </Html>
-      ) : (
-        <group position={[0, tipY - 0.1, 0]}><Beacon y={0} /></group>
       )}
     </group>
   );
@@ -145,7 +183,136 @@ export interface SceneLabels {
   social: string;
   contact: string;
   hello: string;
+  shelf: string;
 }
+
+const APP_ICONS = [
+  { src: '/assets/bb-icon.jpg', name: 'BB Oto Yıkama' },
+  { src: '/assets/forx-icon.png', name: 'Forx' },
+];
+
+const loadImg = (src: string) =>
+  new Promise<HTMLImageElement | null>((ok) => {
+    const i = new Image();
+    i.onload = () => ok(i);
+    i.onerror = () => ok(null);
+    i.src = src;
+  });
+
+/** A big phone hanging on the wall; its screen shows the app icons. */
+const GiantPhone: React.FC<{ title: string }> = ({ title }) => {
+  const [tex, setTex] = useState<CanvasTexture | null>(null);
+  useEffect(() => {
+    let alive = true;
+    let made: CanvasTexture | null = null;
+    Promise.all([document.fonts.load('700 60px Fredoka').catch(() => {}), ...APP_ICONS.map((a) => loadImg(a.src))]).then(([, ...imgs]) => {
+      if (!alive) return;
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 1024;
+      const g = c.getContext('2d')!;
+      const bg = g.createLinearGradient(0, 0, 0, 1024);
+      bg.addColorStop(0, '#ffb08f');
+      bg.addColorStop(1, '#ff7a59');
+      g.fillStyle = bg;
+      g.fillRect(0, 0, 512, 1024);
+      g.fillStyle = '#fff8ee';
+      g.textAlign = 'center';
+      g.font = '700 30px Fredoka, sans-serif';
+      g.fillText('9:41', 256, 70);
+      g.font = '700 58px Fredoka, sans-serif';
+      g.fillText(title, 256, 210);
+      (imgs as (HTMLImageElement | null)[]).forEach((img, i) => {
+        const y = 300 + i * 300;
+        const x = 156;
+        const size = 200;
+        g.save();
+        g.shadowColor = 'rgba(0,0,0,.25)';
+        g.shadowBlur = 24;
+        g.shadowOffsetY = 10;
+        g.beginPath();
+        g.roundRect(x, y, size, size, 48);
+        g.fillStyle = '#ffffff';
+        g.fill();
+        g.restore();
+        if (img) {
+          g.save();
+          g.beginPath();
+          g.roundRect(x, y, size, size, 48);
+          g.clip();
+          g.drawImage(img, x, y, size, size);
+          g.restore();
+        }
+        g.fillStyle = '#fff8ee';
+        g.font = '700 36px Fredoka, sans-serif';
+        g.fillText(APP_ICONS[i].name, 256, y + size + 50);
+      });
+      made = new CanvasTexture(c);
+      made.colorSpace = SRGBColorSpace;
+      made.anisotropy = 4;
+      setTex(made);
+    });
+    return () => { alive = false; made?.dispose(); };
+  }, [title]);
+  return (
+    <group>
+      <Box p={[0, 1.05, 0.06]} s={[1.15, 2.1, 0.12]} c={COLORS.ink} />
+      <Box p={[0, 1.98, 0.125]} s={[0.3, 0.06, 0.01]} c="#1f1a29" shadow={false} />
+      {tex && (
+        <mesh position={[0, 1.02, 0.125]}>
+          <planeGeometry args={[1.0, 1.9]} />
+          <meshBasicMaterial map={tex} toneMapped={false} />
+        </mesh>
+      )}
+    </group>
+  );
+};
+
+/** Wooden sign standing on the shelf; text is painted onto a canvas texture. */
+const Sign: React.FC<{ text: string; onClick: () => void }> = ({ text, onClick }) => {
+  const [tex, setTex] = useState<CanvasTexture | null>(null);
+  const [hover, setHover] = useState(false);
+  useCursor(hover);
+  useEffect(() => {
+    let alive = true;
+    let made: CanvasTexture | null = null;
+    document.fonts.load('700 96px Fredoka').catch(() => {}).then(() => {
+      if (!alive) return;
+      const c = document.createElement('canvas');
+      c.width = 1024; c.height = 256;
+      const g = c.getContext('2d')!;
+      g.fillStyle = '#c98a52';
+      g.fillRect(0, 0, c.width, c.height);
+      g.fillStyle = '#fff8ee';
+      g.font = '700 120px Fredoka, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(text, c.width / 2, c.height / 2 + 6);
+      made = new CanvasTexture(c);
+      made.colorSpace = SRGBColorSpace;
+      made.anisotropy = 4;
+      setTex(made);
+    });
+    return () => { alive = false; made?.dispose(); };
+  }, [text]);
+  return (
+    <group
+      position={[0.5, 2.92, 3.6]}
+      scale={hover ? 1.05 : 1}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onPointerOver={(e) => { e.stopPropagation(); setHover(true); }}
+      onPointerOut={() => setHover(false)}
+    >
+      <Box p={[0, 0, 0]} s={[0.08, 0.5, 2.0]} c={COLORS.woodDark} />
+      {[-0.7, 0.7].map((z) => <Box key={z} p={[0, -0.22, z]} s={[0.06, 0.2, 0.08]} c={COLORS.woodDark} shadow={false} />)}
+      {tex && (
+        <mesh position={[0.045, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+          <planeGeometry args={[1.88, 0.44]} />
+          <meshBasicMaterial map={tex} toneMapped={false} />
+        </mesh>
+      )}
+    </group>
+  );
+};
 
 const Room: React.FC<{
   labels: SceneLabels;
@@ -173,6 +340,7 @@ const Room: React.FC<{
         color="#fff1e0"
         castShadow
         shadow-mapSize={[1024, 1024]}
+        shadow-normalBias={0.03}
         shadow-camera-left={-9}
         shadow-camera-right={9}
         shadow-camera-top={9}
@@ -218,13 +386,15 @@ const Room: React.FC<{
       {/* shelf (projects) */}
       <group>
         {[1.05, 6.15].map((z) => <Box key={z} p={[0.45, 1.3, z]} s={[0.9, 2.6, 0.1]} c={COLORS.wood} />)}
-        {[0.03, 0.6, 1.3, 2.0, 2.6].map((y) => <Box key={y} p={[0.45, y, 3.6]} s={[0.9, 0.06, 5.2]} c={COLORS.wood} />)}
+        {[0.09, 0.6, 1.3, 2.0, 2.6].map((y) => <Box key={y} p={[0.45, y, 3.6]} s={[0.9, 0.06, 5.2]} c={COLORS.wood} />)}
         <Box p={[0.04, 1.3, 3.6]} s={[0.04, 2.6, 5.2]} c={COLORS.woodDark} shadow={false} />
         {/* decoration: books + plant */}
         {[0, 1, 2].map((i) => <Box key={i} p={[0.45, 1.53, 4.6 + i * 0.22]} s={[0.5, 0.44 - i * 0.05, 0.16]} c={['#7a6bd1', '#5fae8e', '#f2a65a'][i]} />)}
         {[0, 1].map((i) => <Box key={i} p={[0.45, 2.24, 1.7 + i * 0.22]} s={[0.5, 0.42, 0.16]} c={['#ff8a73', '#3b3348'][i]} />)}
         <mesh position={[0.45, 0.78, 3.4]} castShadow><cylinderGeometry args={[0.12, 0.1, 0.3, 12]} /><meshStandardMaterial color="#ffffff" /></mesh>
         <mesh position={[0.45, 1.02, 3.4]} castShadow><sphereGeometry args={[0.2, 12, 12]} /><meshStandardMaterial color="#5fae6b" /></mesh>
+        {/* sign on top of the shelf */}
+        <Sign text={labels.shelf} onClick={() => onGo('projects', 0)} />
         {PROJECT_SLOTS.map((s, i) => (
           <Hot key={i} position={[0.45, s.y + 0.03, s.z]} label={labels.projects[i]} tipY={0.85} onSelect={() => onGo('projects', i)}>
             <Box p={[0, 0.25, 0]} s={[0.6, 0.5, 0.9]} c={COLORS.projects[i]} />
@@ -234,7 +404,7 @@ const Room: React.FC<{
       </group>
 
       {/* door (social) */}
-      <Hot position={[0.03, 0, 8.3]} label={labels.social} tipY={2.55} onSelect={() => onGo('social')}>
+      <Hot position={[0.07, 0, 8.3]} label={labels.social} tipY={2.55} onSelect={() => onGo('social')}>
         <Box p={[0, 1.1, 0]} s={[0.08, 2.2, 1.1]} c="#ffffff" shadow={false} />
         <Box p={[0.04, 1.08, 0]} s={[0.06, 2.06, 0.96]} c="#c98b5e" shadow={false} />
         <mesh position={[0.1, 1.05, -0.33]}><sphereGeometry args={[0.05, 12, 12]} /><meshStandardMaterial color={COLORS.accent} /></mesh>
@@ -243,7 +413,7 @@ const Room: React.FC<{
       </Hot>
 
       {/* picture frame (about) */}
-      <Hot position={[7.4, 2.25, 0.02]} label={labels.about} tipY={0.75} onSelect={() => onGo('about')}>
+      <Hot position={[7.4, 2.25, 0.06]} label={labels.about} tipY={0.75} onSelect={() => onGo('about')}>
         <Box p={[0, 0, 0]} s={[1.0, 0.9, 0.08]} c="#ffffff" shadow={false} />
         <Suspense fallback={null}><Photo /></Suspense>
       </Hot>
@@ -276,15 +446,9 @@ const Room: React.FC<{
         <mesh position={[6.6, 1.45, 0.52]} rotation={[0.5, 0, 0]}><coneGeometry args={[0.16, 0.22, 16, 1, true]} /><meshStandardMaterial color="#ffd166" side={2} /></mesh>
       </group>
 
-      {/* phone (apps) */}
-      <Hot position={[8.35, 0.85, 0.95]} label={labels.apps} tipY={0.6} onSelect={() => onGo('apps')}>
-        <group rotation={[0, -0.4, 0]}>
-          <Box p={[0, 0.02, 0]} s={[0.26, 0.04, 0.46]} c={COLORS.ink} />
-          <mesh position={[0, 0.045, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[0.22, 0.4]} />
-            <meshBasicMaterial color={COLORS.accent} />
-          </mesh>
-        </group>
+      {/* giant phone on the wall (apps) */}
+      <Hot position={[1.9, 0.5, 0.02]} label={labels.apps} tipY={2.45} onSelect={() => onGo('apps')}>
+        <GiantPhone title={labels.apps} />
       </Hot>
 
       {/* plant */}
@@ -332,19 +496,31 @@ const Scene: React.FC<Omit<React.ComponentProps<typeof Room>, 'posRef'>> = (prop
   >
     <Fit />
     <Follow posRef={posRef} />
+    <Controls />
+    <Room {...props} posRef={posRef} />
+  </Canvas>
+  );
+};
+
+/** Orbit within a small range; on phones also pinch to zoom between the whole room and a close view. */
+const Controls: React.FC = () => {
+  const { width: w, height: h } = useThree((s) => s.size);
+  const follow = isFollow(w, h);
+  return (
     <OrbitControls
       makeDefault
       enablePan={false}
-      enableZoom={false}
-      enableDamping
+      enableZoom={follow}
+      minZoom={follow ? fullZoom(w, h) : 0}
+      maxZoom={follow ? closeZoom(w, h) * 1.6 : Infinity}
+      zoomSpeed={0.8}
+      enableDamping={false}
       minAzimuthAngle={Math.PI / 4 - 0.55}
       maxAzimuthAngle={Math.PI / 4 + 0.55}
       minPolarAngle={0.7}
       maxPolarAngle={1.15}
       rotateSpeed={0.5}
     />
-    <Room {...props} posRef={posRef} />
-  </Canvas>
   );
 };
 

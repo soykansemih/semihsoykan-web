@@ -57,10 +57,15 @@ export interface Translation {
   proj1Desc: string;
   proj2Title: string;
   proj2Desc: string;
-  proj3Title: string;
-  proj3Desc: string;
   proj4Title: string;
   proj4Desc: string;
+  proj5Title: string;
+  proj5Desc: string;
+  proj6Title: string;
+  proj6Desc: string;
+  proj7Title: string;
+  proj7Desc: string;
+  proj7Features: string;
 
   aboutTitle: string;
   aboutQuote: string;

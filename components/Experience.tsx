@@ -16,7 +16,7 @@ const EMAIL = 'semihsoykaniletisim@gmail.com';
 
 const ui = {
   tr: {
-    role: 'Web & Mobil Uygulama Geliştirici',
+    role: 'Mobil & Web Uygulama Geliştirici',
     loading: 'Oda hazırlanıyor…',
     hint: 'Yere tıkla, karakterin yürüsün. Parlayan objelere tıkla.',
     hintTouch: 'Yere dokun, karakterin yürüsün.',
@@ -24,16 +24,14 @@ const ui = {
     hello: 'Merhaba! Bir proje mi var? 👋',
     sent: 'Mesajın gönderildi, teşekkürler!',
     error: 'Gönderilemedi. Lütfen tekrar dene ya da e-posta at.',
-    getApp: "App Store'da aç",
     copy: 'Kopyala', copied: 'Kopyalandı',
     close: 'Kapat',
     elsewhere: 'Beni burada da bulabilirsin',
     expand: 'Büyüt', browse: 'Siteyi buradan gezebilirsin', siteLoading: 'Site yükleniyor…',
-    internal: 'Şirket içi sistem. Güvenlik nedeniyle yalnızca ekran görüntüsü gösteriliyor.',
-    linkedin: "LinkedIn'de gör",
+    myApps: 'Uygulamalarım', tapApp: 'Açmak için bir uygulamaya dokun', internal: 'Bu sistem firmaya ait olduğundan içeriğini yalnızca yetkili kullanıcılar görebilir.',
   },
   en: {
-    role: 'Web & Mobile App Developer',
+    role: 'Mobile & Web App Developer',
     loading: 'Setting up the room…',
     hint: 'Click the floor to walk. Click glowing objects.',
     hintTouch: 'Tap the floor to walk.',
@@ -41,22 +39,43 @@ const ui = {
     hello: 'Hi! Got a project? 👋',
     sent: 'Message sent, thank you!',
     error: "Couldn't send. Please try again or email me.",
-    getApp: 'Open in App Store',
     copy: 'Copy', copied: 'Copied',
     close: 'Close',
     elsewhere: 'You can also find me here',
     expand: 'Expand', browse: 'Browse the live site right here', siteLoading: 'Loading site…',
-    internal: 'Internal company system. Only a screenshot is shown for security reasons.',
-    linkedin: 'View on LinkedIn',
+    myApps: 'My Apps', tapApp: 'Tap an app to open it', internal: 'This system belongs to the company, so only authorized users can see its content.',
   },
 };
 
+const SI = (slug: string) => `https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/${slug}.svg`;
 const SOCIALS = [
-  { label: 'Instagram', handle: '@soykandev', href: 'https://www.instagram.com/soykandev/', color: '#e1306c' },
-  { label: 'LinkedIn', handle: 'in/soykansemih', href: 'https://www.linkedin.com/in/soykansemih/', color: '#0a66c2' },
-  { label: 'GitHub', handle: 'soykansemih', href: 'https://github.com/soykansemih', color: '#24292f' },
-  { label: 'Medium', handle: '@soykansemih', href: 'https://medium.com/@soykansemih', color: '#111111' },
+  { label: 'Instagram', handle: '@soykandev', href: 'https://www.instagram.com/soykandev/', bg: 'linear-gradient(45deg,#feda75,#fa7e1e 30%,#d62976 60%,#962fbf 85%,#4f5bd5)', icon: SI('instagram') },
+  { label: 'LinkedIn', handle: 'in/soykansemih', href: 'https://www.linkedin.com/in/soykansemih/', bg: '#0a66c2', icon: SI('linkedin') },
+  { label: 'GitHub', handle: 'soykansemih', href: 'https://github.com/soykansemih', bg: '#24292f', icon: SI('github') },
+  { label: 'Medium', handle: '@soykansemih', href: 'https://medium.com/@soykansemih', bg: '#111111', icon: SI('medium') },
 ];
+
+/** A phone home screen: a widget on top and a grid of tappable app icons. */
+const PhoneHome: React.FC<{ kicker: string; title: string; items: { key: string; href: string; label: string; title?: string; icon: React.ReactNode }[] }> = ({ kicker, title, items }) => (
+  <div className="room-phone">
+    <div className="room-phone-screen">
+      <div className="room-phone-status"><span>9:41</span><span className="room-phone-notch" /><span>●●● ▮</span></div>
+      <div className="room-phone-widget">
+        <div className="text-[11px] font-bold uppercase tracking-wider opacity-80">{kicker}</div>
+        <div className="text-lg font-bold leading-tight">{title}</div>
+      </div>
+      <div className="room-phone-grid">
+        {items.map((it) => (
+          <a key={it.key} href={it.href} target="_blank" rel="noopener noreferrer" className="room-phone-app" title={it.title}>
+            {it.icon}
+            <span>{it.label}</span>
+          </a>
+        ))}
+      </div>
+      <div className="room-phone-home" />
+    </div>
+  </div>
+);
 
 const ContactForm: React.FC = () => {
   const { t, language } = useLanguage();
@@ -158,26 +177,32 @@ const Panel: React.FC<{ state: PanelState; onClose: () => void; onPick: (i: numb
   const { t, language } = useLanguage();
   const u = ui[language];
 
-  // site: embedded live; image only (no link) for internal systems; external: image + outside link.
-  const projects: { title: string; desc: string; site?: string; image?: string; external?: string; internal?: boolean }[] = [
-    { title: t.proj1Title, desc: t.proj1Desc, image: '/assets/operation_mockup.jpg', internal: true },
+  // site: embedded live; image only (no link) for internal systems.
+  const projects: { title: string; desc: string; site?: string; image?: string; internal?: boolean; features?: string[] }[] = [
+    { title: t.proj1Title, desc: t.proj1Desc, site: 'https://defterim.otoyikamabb.com', internal: true },
     { title: t.proj2Title, desc: t.proj2Desc, site: 'https://otoyikamabb.com' },
     { title: t.proj4Title, desc: t.proj4Desc, site: 'https://mersinoyuncak.com' },
-    { title: t.proj3Title, desc: t.proj3Desc, image: '/assets/smart_mockup.jpg', external: 'https://www.linkedin.com/feed/update/urn:li:activity:7338653025886007296/' },
+    { title: t.proj5Title, desc: t.proj5Desc, site: 'https://www.fotomuat.com' },
+    { title: t.proj6Title, desc: t.proj6Desc, site: 'https://celiller.com' },
+    { title: t.proj7Title, desc: t.proj7Desc, site: 'https://stok.mersinoyuncak.com', internal: true },
   ];
   const [full, setFull] = useState(false);
   const apps = [
-    { name: 'BB Oto Yıkama', cat: t.bbAppCategory, desc: t.bbAppDesc, icon: '/assets/bb-icon.jpg', link: 'https://apps.apple.com/tr/app/bb-oto-y%C4%B1kama/id6760658074?l=tr' },
-    { name: 'Forx: Döviz Altın Kripto', cat: t.forxAppCategory, desc: t.forxAppDesc, icon: '/assets/forx-icon.png', link: 'https://apps.apple.com/tr/app/forx-d%C3%B6viz-alt%C4%B1n-kripto/id6767925625?l=tr' },
-  ];
+    { name: 'BB Oto Yıkama', cat: t.bbAppCategory, desc: t.bbAppDesc, icon: '/assets/bb-icon.jpg',
+      ios: 'https://apps.apple.com/tr/app/bb-oto-y%C4%B1kama/id6760658074?l=tr',
+      android: 'https://play.google.com/store/apps/details?id=com.semihsoykan.bbApp' },
+    { name: 'Forx: Döviz Altın Kripto', cat: t.forxAppCategory, desc: t.forxAppDesc, icon: '/assets/forx-icon.png',
+      ios: 'https://apps.apple.com/tr/app/forx-d%C3%B6viz-alt%C4%B1n-kripto/id6767925625?l=tr' },
+  ] as { name: string; cat: string; desc: string; icon: string; ios?: string; android?: string }[];
 
+  const isAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
   const titles: Record<PanelKind, string> = { projects: t.portfolioTitle, apps: t.mobileAppsTitle, about: t.aboutTitle, social: u.social, contact: t.contactTitle };
   const i = state.index ?? 0;
   const p = projects[i];
 
   return (
     <>
-    <aside className={`room-panel ${state.kind === 'projects' ? 'is-wide' : ''}`} role="dialog" aria-label={titles[state.kind]}>
+    <aside className={`room-panel ${state.kind === 'projects' ? 'is-wide' : state.kind === 'apps' || state.kind === 'social' ? 'is-phone' : ''}`} role="dialog" aria-label={titles[state.kind]}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display text-2xl text-[#3b3348]">{titles[state.kind]}</h2>
         <button onClick={onClose} aria-label={u.close} className="w-9 h-9 rounded-full bg-[#fbeee0] hover:bg-[#f6dcc4] flex items-center justify-center text-[#3b3348]">
@@ -191,20 +216,28 @@ const Panel: React.FC<{ state: PanelState; onClose: () => void; onPick: (i: numb
             <Laptop host={new URL(p.site).host} onExpand={() => setFull(true)} expandLabel={u.expand}>
               <SiteFrame url={p.site} title={p.title} loadingText={u.siteLoading} />
             </Laptop>
-          ) : (
+          ) : p.image ? (
             <div className="rounded-2xl overflow-hidden bg-[#f3ece6]">
               <img src={p.image} alt={p.title} className="w-full aspect-[16/11] object-cover" />
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-[#fbeee0] aspect-[16/11] flex flex-col items-center justify-center gap-4 p-6 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-sm">📦</div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {p.features?.map((f) => (
+                  <span key={f} className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#3b3348]">{f}</span>
+                ))}
+              </div>
             </div>
           )}
           <div>
             <h3 className="font-bold text-lg text-[#3b3348]">{p.title}</h3>
             <p className="text-[#6b6070] text-sm mt-1">{p.desc}</p>
-            {p.site && <p className="text-xs font-bold text-[#ff7a59] mt-2">👆 {u.browse}</p>}
-            {p.internal && <p className="text-xs text-[#8a7a6c] mt-2 flex gap-1.5"><span>🔒</span>{u.internal}</p>}
+            {p.site && !p.internal && <p className="text-xs font-bold text-[#ff7a59] mt-2">👆 {u.browse}</p>}
+            {p.internal && <p className="text-xs text-[#8a7a6c] mt-2">{u.internal}</p>}
           </div>
           {p.site && <button onClick={() => setFull(true)} className="room-btn w-full">⤢ {u.expand}</button>}
-          {p.external && <a href={p.external} target="_blank" rel="noopener noreferrer" className="room-btn w-full">{u.linkedin} ↗</a>}
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-6 gap-2">
             {projects.map((x, k) => (
               <button key={k} onClick={() => onPick(k)} title={x.title}
                 className={`h-2.5 rounded-full transition ${k === i ? 'bg-[#ff7a59]' : 'bg-[#f3d9bd] hover:bg-[#f0c9a4]'}`} />
@@ -214,19 +247,13 @@ const Panel: React.FC<{ state: PanelState; onClose: () => void; onPick: (i: numb
       )}
 
       {state.kind === 'apps' && (
-        <div className="space-y-3">
-          {apps.map((a) => (
-            <a key={a.name} href={a.link} target="_blank" rel="noopener noreferrer" className="flex gap-4 p-3 rounded-2xl bg-[#fbeee0] hover:bg-[#f6e0ca] transition">
-              <img src={a.icon} alt="" className="w-16 h-16 rounded-2xl object-cover shrink-0" />
-              <div className="min-w-0">
-                <div className="font-bold text-[#3b3348]">{a.name}</div>
-                <div className="text-xs font-semibold text-[#ff7a59] uppercase tracking-wide">{a.cat}</div>
-                <p className="text-sm text-[#6b6070] mt-1">{a.desc}</p>
-                <div className="text-sm font-bold text-[#3b3348] mt-2">{u.getApp} ↗</div>
-              </div>
-            </a>
-          ))}
-        </div>
+        <PhoneHome kicker={u.myApps} title={u.tapApp} items={apps.map((a) => ({
+          key: a.name,
+          href: isAndroid && a.android ? a.android : (a.ios ?? a.android ?? '#'),
+          label: a.name.split(':')[0],
+          title: a.desc,
+          icon: <img src={a.icon} alt="" />,
+        }))} />
       )}
 
       {state.kind === 'about' && (
@@ -244,18 +271,13 @@ const Panel: React.FC<{ state: PanelState; onClose: () => void; onPick: (i: numb
       )}
 
       {state.kind === 'social' && (
-        <div className="space-y-2">
-          <p className="text-[#6b6070] text-sm mb-3">{u.elsewhere}</p>
-          {SOCIALS.map((s) => (
-            <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 rounded-2xl bg-[#fbeee0] hover:bg-[#f6e0ca] transition">
-              <span className="flex items-center gap-3">
-                <span className="w-3 h-3 rounded-full" style={{ background: s.color }} />
-                <span className="font-bold text-[#3b3348]">{s.label}</span>
-              </span>
-              <span className="text-sm text-[#6b6070]">{s.handle} ↗</span>
-            </a>
-          ))}
-        </div>
+        <PhoneHome kicker={u.social} title={u.elsewhere} items={SOCIALS.map((x) => ({
+          key: x.label,
+          href: x.href,
+          label: x.label,
+          title: x.handle,
+          icon: <span className="room-phone-icon" style={{ background: x.bg }}><img src={x.icon} alt="" /></span>,
+        }))} />
       )}
 
       {state.kind === 'contact' && <ContactForm />}
@@ -284,10 +306,13 @@ const Experience: React.FC = () => {
   const [nearMe, setNearMe] = useState(false);
   const touch = useMemo(() => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches, []);
 
+  const noop = useCallback(() => {}, []);
   const go = useCallback((kind: PanelKind, index?: number) => {
-    setPanel(null);
+    const target = { kind, index: kind === 'projects' ? index ?? 0 : undefined };
+    // Open right away; the character still walks over in the background.
+    setPanel(target);
     const [x, z] = kind === 'projects' ? [SPOTS.projects[0], PROJECT_SLOTS[index ?? 0].z] : SPOTS[kind];
-    setGoal({ x, z, then: { kind, index: kind === 'projects' ? index ?? 0 : undefined }, id: Date.now() });
+    setGoal({ x, z, then: target, id: Date.now() });
   }, []);
 
   const onFloor = useCallback((x: number, z: number) => {
@@ -303,8 +328,9 @@ const Experience: React.FC = () => {
   }, []);
 
   const labels = {
-    projects: [t.proj1Title, t.proj2Title, t.proj4Title, t.proj3Title],
+    projects: [t.proj1Title, t.proj2Title, t.proj4Title, t.proj5Title, t.proj6Title, t.proj7Title],
     apps: u.apps, about: u.about, social: u.social, contact: u.contact, hello: u.hello,
+    shelf: language === 'tr' ? 'Neler Yaptım' : 'My Work',
   };
 
   const menu: PanelKind[] = ['projects', 'apps', 'about', 'social', 'contact'];
@@ -314,7 +340,7 @@ const Experience: React.FC = () => {
       <div className="absolute inset-0">
         <Suspense fallback={<Loading text={u.loading} />}>
         <Scene labels={labels} goal={goal} onFloor={onFloor} onGo={go}
-          onArrive={setPanel} bubble={nearMe && panel?.kind !== 'contact'} onNearMe={setNearMe} />
+          onArrive={noop} bubble={nearMe && panel?.kind !== 'contact'} onNearMe={setNearMe} />
         </Suspense>
       </div>
 

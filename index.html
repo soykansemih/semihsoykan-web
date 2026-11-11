@@ -47,6 +47,23 @@
       @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
       .room-input { width: 100%; padding: 12px 16px; border-radius: 16px; background: #fbeee0; border: 2px solid transparent; outline: none; font: inherit; color: #3b3348; }
       .room-input:focus { border-color: #ff7a59; background: #fff; }
+      .room-panel.is-phone { width: min(330px, calc(100vw - 40px)); }
+      .room-phone { margin: 0 auto; width: 100%; max-width: 280px; aspect-ratio: 9 / 18.5; background: #1f1a29; border-radius: 42px; padding: 10px; box-shadow: 0 18px 40px -16px rgba(59,51,72,.6), inset 0 0 0 2px #3b3348; }
+      .room-phone-screen { position: relative; height: 100%; border-radius: 33px; overflow: hidden; background: linear-gradient(160deg, #ffc2a3 0%, #ff8a6b 55%, #c79bf2 100%); color: #fff; padding: 12px 16px; display: flex; flex-direction: column; font-family: Fredoka, sans-serif; }
+      .room-phone-status { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; padding: 0 6px; }
+      .room-phone-notch { width: 78px; height: 22px; background: #1f1a29; border-radius: 999px; }
+      .room-phone-widget { margin-top: 22px; padding: 14px; border-radius: 22px; background: rgba(255,255,255,.22); backdrop-filter: blur(6px); }
+      .room-phone-grid { margin-top: 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px 10px; }
+      .room-phone-app { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-align: center; color: #fff; transition: transform .15s; }
+      .room-phone-app img { width: 62px; height: 62px; border-radius: 16px; object-fit: cover; box-shadow: 0 6px 14px -6px rgba(0,0,0,.45); }
+      .room-phone-icon { width: 62px; height: 62px; border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 14px -6px rgba(0,0,0,.45); }
+      .room-phone-app .room-phone-icon img { width: 30px; height: 30px; border-radius: 0; box-shadow: none; filter: invert(1); }
+      .room-phone-app:hover { transform: translateY(-3px); }
+      .room-phone-app:active { transform: scale(.92); }
+      .room-phone-home { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 110px; height: 5px; border-radius: 999px; background: rgba(255,255,255,.85); }
+      @media (max-width: 640px) { .room-phone { max-width: min(250px, calc((62vh - 90px) / 2.05)); border-radius: 34px; padding: 8px; } .room-phone-screen { border-radius: 27px; } }
+      .room-store { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 12px; background: #3b3348; color: #fff; font-size: 13px; font-weight: 800; transition: .2s; }
+      .room-store:hover { background: #ff7a59; }
       .room-btn { display: inline-flex; align-items: center; justify-content: center; padding: 13px 18px; border-radius: 16px; background: #ff7a59; color: #fff; font-weight: 800; transition: .2s; }
       .room-btn:hover { background: #f2633f; transform: translateY(-1px); }
       .room-btn:disabled { opacity: .6; }

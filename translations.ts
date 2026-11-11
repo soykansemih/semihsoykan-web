@@ -61,15 +61,20 @@ export const translations: Record<'tr' | 'en', Translation> = {
     proj1Desc: "Gelir takibini dijitalleştiren kapsamlı çözüm.",
     proj2Title: "BB Oto Yıkama — Kurumsal Web Sitesi",
     proj2Desc: "SEO odaklı profesyonel marka sunumu.",
-    proj3Title: "Akıllı Tarım Cihazı",
-    proj3Desc: "Sensör verilerini web ve mobilde sunan akıllı tarım çözümü.",
     proj4Title: "Maxx Toys — Kurumsal Web Sitesi",
     proj4Desc: "SEO odaklı profesyonel marka sunumu.",
+    proj5Title: "Fotomuat — Etkinlik Fotoğraf Albümü",
+    proj7Title: "Maxx Toys — Stok & Finans Takip Sistemi",
+    proj7Desc: "Maxx Toys için geliştirdiğim; stok, gelir ve gider takibini tek panelde toplayan şirket içi yönetim sistemi.",
+    proj7Features: "Stok takibi|Gelir & gider|Raporlama",
+    proj6Title: "Celiller — Kurumsal Web Sitesi",
+    proj6Desc: "Narenciye üretimi ve ihracatı yapan Celiller için kurumsal web sitesi.",
+    proj5Desc: "Misafirlerin çektiği etkinlik fotoğraflarını QR kod ile tek bir albümde toplayan web uygulaması.",
 
     aboutTitle: "Ben Kimim?",
-    aboutQuote: "Dijital dünyadaki varlığınız, sadece bir sayfa değil, markanızın hikayesidir.",
+    aboutQuote: "İyi bir uygulama, kullanıcının cebinde her gün açtığı bir alışkanlığa dönüşür.",
     aboutBody:
-      "Merhaba, ben Semih Soykan. Modern web teknolojileri ve e-ticaret çözümleri üzerine çalışmalar yürüten bir geliştiriciyim. Sadece bir web sitesi değil; kullanıcı dostu, satış odaklı ve markanızın kimliğini dijital dünyaya en doğru şekilde yansıtan sistemler kuruyorum. Profesyonel bakış açımı samimi bir iletişimle birleştirerek, projelerinizde güvenilir bir çözüm ortağı olmayı hedefliyorum.",
+      "Merhaba, ben Semih Soykan. iOS ve Android için mobil uygulamalar, web siteleri ve paneller geliştiriyorum. Fikirlerinizi dijitale dökmek için bekliyorum.",
 
     contactTitle: "Hadi Başlayalım",
     contactSubtitle:
@@ -159,15 +164,20 @@ export const translations: Record<'tr' | 'en', Translation> = {
     proj1Desc: "A comprehensive solution that digitalizes revenue tracking.",
     proj2Title: "BB Oto Yıkama — Corporate Website",
     proj2Desc: "Professional brand presentation with SEO focus.",
-    proj3Title: "Smart Farming Device",
-    proj3Desc: "A smart farming solution presenting sensor data on web and mobile.",
     proj4Title: "Maxx Toys — Corporate Website",
     proj4Desc: "Professional brand presentation with SEO focus.",
+    proj5Title: "Fotomuat — Event Photo Album",
+    proj7Title: "Maxx Toys — Stock & Finance Tracking",
+    proj7Desc: "An internal management system I built for Maxx Toys that brings stock, income and expense tracking into one panel.",
+    proj7Features: "Stock tracking|Income & expenses|Reporting",
+    proj6Title: "Celiller — Corporate Website",
+    proj6Desc: "Corporate website for Celiller, a citrus producer and exporter.",
+    proj5Desc: "A web app that collects guests' event photos into a single album with a QR code.",
 
     aboutTitle: "Who Am I?",
-    aboutQuote: "Your presence in the digital world is not just a page — it's your brand's story.",
+    aboutQuote: "A good app turns into a habit people open in their pocket every day.",
     aboutBody:
-      "Hi, I’m Semih Soykan. I’m a developer working on modern web technologies and e-commerce solutions. I don’t just build websites; I create user-friendly, sales-focused systems that accurately reflect your brand’s identity in the digital world. By combining a professional perspective with sincere communication, I aim to be a reliable solution partner for your projects..",
+      "Hi, I’m Semih Soykan. I build mobile apps for iOS and Android, websites and dashboards. I’m ready to bring your ideas to life.",
 
     contactTitle: "Let's Get Started",
     contactSubtitle:
