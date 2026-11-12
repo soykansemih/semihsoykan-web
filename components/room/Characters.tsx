@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
+import NameTag from './NameTag';
 import { Group, Vector3 } from 'three';
 import { Goal, ME, PanelState } from './spots';
 
@@ -39,7 +40,7 @@ const Body: React.FC<Look & { limbs: Limbs; seated?: boolean }> = ({ shirt, pant
           </mesh>
           <mesh position={[0, -0.48, 0.05]} castShadow>
             <boxGeometry args={[0.17, 0.08, 0.27]} />
-            <Mat c="#2d2a35" />
+            <Mat c="#0e0e0e" />
           </mesh>
         </group>
       ))}
@@ -109,7 +110,8 @@ export const Player: React.FC<{
   goal: Goal | null;
   posRef: React.MutableRefObject<Vector3>;
   onArrive: (p: PanelState) => void;
-}> = ({ goal, posRef, onArrive }) => {
+  label: string;
+}> = ({ goal, posRef, onArrive, label }) => {
   const g = useRef<Group>(null);
   const limbs = useLimbs();
   const target = useRef<Vector3 | null>(null);
@@ -164,7 +166,9 @@ export const Player: React.FC<{
 
   return (
     <group ref={g} rotation={[0, Math.PI, 0]}>
-      <Body shirt="#ffd166" pants="#3b3b4f" skin="#f2c6a0" hair="#7a4a2a" limbs={limbs} />
+      <Body shirt="#ffd166" pants="#151515" skin="#f2c6a0" hair="#7a4a2a" limbs={limbs} />
+      {/* name tag that stays above the head */}
+      <NameTag text={label} position={[0, 2.0, 0]} />
     </group>
   );
 };
@@ -207,23 +211,23 @@ export const Me: React.FC<{
       {/* chair base (doesn't swivel) */}
       <mesh position={[0, 0.22, 0]} castShadow>
         <cylinderGeometry args={[0.05, 0.05, 0.44, 12]} />
-        <meshStandardMaterial color="#5b5266" />
+        <meshStandardMaterial color="#1c1c1c" />
       </mesh>
       <mesh position={[0, 0.03, 0]} castShadow>
         <cylinderGeometry args={[0.32, 0.32, 0.06, 5]} />
-        <meshStandardMaterial color="#5b5266" />
+        <meshStandardMaterial color="#1c1c1c" />
       </mesh>
       <group ref={g} rotation={[0, Math.PI, 0]}>
         <mesh position={[0, 0.46, 0.05]} castShadow>
           <boxGeometry args={[0.6, 0.08, 0.6]} />
-          <meshStandardMaterial color="#ff8a73" />
+          <meshStandardMaterial color="#ffe600" />
         </mesh>
         <mesh position={[0, 0.85, -0.26]} castShadow>
           <boxGeometry args={[0.58, 0.7, 0.08]} />
-          <meshStandardMaterial color="#e46f58" />
+          <meshStandardMaterial color="#ffe600" />
         </mesh>
         <group position={[0, 0.0, 0]}>
-          <Body shirt="#4f7cff" pants="#2f3b66" skin="#f2c6a0" hair="#3a2a20" glasses seated limbs={limbs} />
+          <Body shirt="#ffffff" pants="#213374" skin="#f2c6a0" hair="#3a2a20" glasses seated limbs={limbs} />
         </group>
       </group>
     </group>

@@ -35,16 +35,15 @@ export const PROJECT_SLOTS = [
 ];
 
 export const COLORS = {
-  floor: '#e2b48a',
-  floorSide: '#c99467',
-  wallL: '#f3d9bd',
-  wallR: '#f8e6d2',
-  rug: '#f4a58a',
-  wood: '#d79a62',
-  woodDark: '#b97e49',
-  accent: '#ff7a59',
-  ink: '#3b3348',
-  projects: ['#ff8a73', '#7cc7a8', '#ffd166', '#c79bf2', '#ffb347', '#8fb3ff'],
+  floor: '#d5d5d5',
+  floorSide: '#b7b7b7',
+  wallL: '#f7f7f7',
+  wallR: '#fafafa',
+  wood: '#bbbbbb',
+  woodDark: '#a0a0a0',
+  accent: '#ffe600',
+  ink: '#121212',
+  projects: ['#ffe600', '#2fd08f', '#ff5a36', '#b98cff', '#ff9d1c', '#4d7dff'],
 };
 
 /** Keep a floor target inside the room and outside furniture. */

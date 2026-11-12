@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import emailjs from '@emailjs/browser';
 import { useLanguage } from '../App';
 import { Goal, PanelKind, PanelState, PROJECT_SLOTS, SPOTS, resolve } from './room/spots';
@@ -28,7 +28,7 @@ const ui = {
     close: 'Kapat',
     elsewhere: 'Beni burada da bulabilirsin',
     expand: 'Büyüt', browse: 'Siteyi buradan gezebilirsin', siteLoading: 'Site yükleniyor…',
-    myApps: 'Uygulamalarım', tapApp: 'Açmak için bir uygulamaya dokun', internal: 'Bu sistem firmaya ait olduğundan içeriğini yalnızca yetkili kullanıcılar görebilir.',
+    myApps: 'Uygulamalarım', tapApp: 'Açmak için bir uygulamaya dokun', internal: 'Şirket içi sistem: içeriği yalnızca yetkililere açık.',
   },
   en: {
     role: 'Mobile & Web App Developer',
@@ -43,16 +43,16 @@ const ui = {
     close: 'Close',
     elsewhere: 'You can also find me here',
     expand: 'Expand', browse: 'Browse the live site right here', siteLoading: 'Loading site…',
-    myApps: 'My Apps', tapApp: 'Tap an app to open it', internal: 'This system belongs to the company, so only authorized users can see its content.',
+    myApps: 'My Apps', tapApp: 'Tap an app to open it', internal: 'Internal system: content is open to authorized users only.',
   },
 };
 
 const SI = (slug: string) => `https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/${slug}.svg`;
 const SOCIALS = [
   { label: 'Instagram', handle: '@soykandev', href: 'https://www.instagram.com/soykandev/', bg: 'linear-gradient(45deg,#feda75,#fa7e1e 30%,#d62976 60%,#962fbf 85%,#4f5bd5)', icon: SI('instagram') },
-  { label: 'LinkedIn', handle: 'in/soykansemih', href: 'https://www.linkedin.com/in/soykansemih/', bg: '#0a66c2', icon: SI('linkedin') },
-  { label: 'GitHub', handle: 'soykansemih', href: 'https://github.com/soykansemih', bg: '#24292f', icon: SI('github') },
-  { label: 'Medium', handle: '@soykansemih', href: 'https://medium.com/@soykansemih', bg: '#111111', icon: SI('medium') },
+  { label: 'LinkedIn', handle: 'in/soykansemih', href: 'https://www.linkedin.com/in/soykansemih/', bg: '#0066cc', icon: SI('linkedin') },
+  { label: 'GitHub', handle: 'soykansemih', href: 'https://github.com/soykansemih', bg: '#0c0c0c', icon: SI('github') },
+  { label: 'Medium', handle: '@soykansemih', href: 'https://medium.com/@soykansemih', bg: '#050505', icon: SI('medium') },
 ];
 
 /** A phone home screen: a widget on top and a grid of tappable app icons. */
@@ -105,7 +105,7 @@ const ContactForm: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <p className="text-[#6b6070]">{t.contactSubtitle}</p>
+      <p className="text-[#1f1f1f]">{t.contactSubtitle}</p>
       <form ref={formRef} onSubmit={submit} className="space-y-3">
         <input id="c-name" name="name" placeholder={t.nameLabel} required className="room-input" />
         <input id="c-email" name="email" type="email" placeholder={t.emailLabel} required className="room-input" />
@@ -116,9 +116,9 @@ const ContactForm: React.FC = () => {
         {status === 'ok' && <p className="text-sm text-emerald-600 text-center font-semibold">{u.sent}</p>}
         {status === 'err' && <p className="text-sm text-rose-600 text-center font-semibold">{u.error}</p>}
       </form>
-      <div className="flex items-center justify-between gap-2 rounded-2xl bg-[#fbeee0] px-4 py-3 text-sm">
+      <div className="flex items-center justify-between gap-2 bg-[#fbfbfb] px-4 py-3 text-sm">
         <span className="truncate select-all">{EMAIL}</span>
-        <button onClick={copy} className="shrink-0 font-bold text-[#ff7a59] hover:underline">{copied ? u.copied : u.copy}</button>
+        <button onClick={copy} className="shrink-0 font-bold bg-[#ffe600] px-2 py-0.5 text-[#121212] hover:bg-[#121212] hover:text-[#ffe600]">{copied ? u.copied : u.copy}</button>
       </div>
     </div>
   );
@@ -140,7 +140,7 @@ const SiteFrame: React.FC<{ url: string; title: string; width?: number; loadingT
   const height = width * 0.625;
   return (
     <div ref={box} className="relative w-full overflow-hidden bg-white" style={{ aspectRatio: '16 / 10' }}>
-      {!loaded && <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-[#8a7a6c] bg-[#fbeee0] animate-pulse">{loadingText}</div>}
+      {!loaded && <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-[#252525] bg-[#fbfbfb] animate-pulse">{loadingText}</div>}
       <iframe
         key={url}
         src={url}
@@ -157,25 +157,74 @@ const SiteFrame: React.FC<{ url: string; title: string; width?: number; loadingT
 };
 
 const Laptop: React.FC<{ children: React.ReactNode; host?: string; onExpand?: () => void; expandLabel: string }> = ({ children, host, onExpand, expandLabel }) => (
-  <div className="relative">
-    <div className="rounded-t-[14px] bg-[#2d2a35] p-[6px] pb-[8px] shadow-[0_18px_30px_-18px_rgba(59,51,72,.6)]">
+  <div className="relative mx-auto" data-fit>
+    <div className="bg-[#0e0e0e] p-[6px] pb-[8px]">
       <div className="flex items-center gap-1.5 px-2 pb-1.5">
-        <span className="w-2 h-2 rounded-full bg-[#ff7a59]" /><span className="w-2 h-2 rounded-full bg-[#ffd166]" /><span className="w-2 h-2 rounded-full bg-[#7cc7a8]" />
-        {host && <span className="ml-2 flex-1 truncate rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] text-white/70">{host}</span>}
+        <span className="w-2 h-2 bg-[#ffe600]" /><span className="w-2 h-2 bg-white" /><span className="w-2 h-2 bg-white" />
+        {host && <span className="ml-2 flex-1 truncate bg-white/10 px-2.5 py-0.5 text-[10px] text-white/70">{host}</span>}
         {onExpand && (
-          <button onClick={onExpand} className="ml-auto rounded-full bg-white/15 hover:bg-white/25 px-2.5 py-0.5 text-[10px] font-bold text-white">⤢ {expandLabel}</button>
+          <button onClick={onExpand} className="ml-auto bg-white/15 hover:bg-white/25 px-2.5 py-0.5 text-[10px] font-bold text-white">⤢ {expandLabel}</button>
         )}
       </div>
-      <div className="rounded-[6px] overflow-hidden">{children}</div>
+      <div className="overflow-hidden">{children}</div>
     </div>
-    <div className="mx-[-10px] h-3 rounded-b-[12px] bg-gradient-to-b from-[#d8d2cc] to-[#b9b2ab]" />
-    <div className="mx-auto h-1 w-1/4 rounded-b bg-[#a39b93]" />
+    <div className="mx-[-10px] h-3 bg-gradient-to-b from-[#f6f6f6] to-[#d1d1d1]" />
+    <div className="mx-auto h-1 w-1/4 bg-[#bababa]" />
   </div>
 );
+
+/**
+ * Keeps a panel's content inside the panel without scrolling, whatever the screen size.
+ * First switches to compact text (data-compact), then narrows the [data-fit] element (the laptop
+ * preview, whose height follows its width), then scales the whole body down if that is not enough.
+ */
+const useFitPanel = (deps: unknown[]) => {
+  const panel = useRef<HTMLElement>(null);
+  const body = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const fit = () => {
+      const p = panel.current;
+      const b = body.current;
+      if (!p || !b) return;
+      const flex = b.querySelector<HTMLElement>('[data-fit]');
+      b.style.setProperty('zoom', '1');
+      if (flex) flex.style.maxWidth = '';
+      p.removeAttribute('data-compact');
+      let over = p.scrollHeight - p.clientHeight;
+      if (over <= 0) return;
+      // Smaller text and tighter spacing come first, so the preview stays as large as possible.
+      p.setAttribute('data-compact', '');
+      over = p.scrollHeight - p.clientHeight;
+      if (over <= 0) return;
+      if (flex) {
+        // 16:10 preview: every pixel of height costs 1.6 pixels of width.
+        flex.style.maxWidth = `${Math.max(180, flex.offsetWidth - over * 1.6 - 2)}px`;
+        over = p.scrollHeight - p.clientHeight;
+        if (over <= 0) return;
+      }
+      const chrome = p.scrollHeight - b.offsetHeight; // header + padding, not scaled
+      const avail = p.clientHeight - chrome;
+      let zoom = avail / b.offsetHeight;
+      for (let k = 0; k < 6; k++) {
+        b.style.setProperty('zoom', String(zoom));
+        const cur = p.scrollHeight - chrome;
+        if (cur <= avail + 0.5) break;
+        zoom *= (avail / cur) * 0.99;
+      }
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    document.fonts?.ready.then(fit).catch(() => {});
+    return () => window.removeEventListener('resize', fit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+  return { panel, body };
+};
 
 const Panel: React.FC<{ state: PanelState; onClose: () => void; onPick: (i: number) => void }> = ({ state, onClose, onPick }) => {
   const { t, language } = useLanguage();
   const u = ui[language];
+  const fit = useFitPanel([state.kind, state.index, language]);
 
   // site: embedded live; image only (no link) for internal systems.
   const projects: { title: string; desc: string; site?: string; image?: string; internal?: boolean; features?: string[] }[] = [
@@ -199,49 +248,79 @@ const Panel: React.FC<{ state: PanelState; onClose: () => void; onPick: (i: numb
   const titles: Record<PanelKind, string> = { projects: t.portfolioTitle, apps: t.mobileAppsTitle, about: t.aboutTitle, social: u.social, contact: t.contactTitle };
   const i = state.index ?? 0;
   const p = projects[i];
+  const step = (d: number) => onPick((i + d + projects.length) % projects.length);
+  // Swipe left/right on the card (outside the live preview) to change project.
+  const swipe = useRef<{ x: number; y: number } | null>(null);
+  const swipeStart = (e: React.TouchEvent) => { swipe.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
+  const swipeEnd = (e: React.TouchEvent) => {
+    const s = swipe.current;
+    swipe.current = null;
+    if (!s) return;
+    const dx = e.changedTouches[0].clientX - s.x;
+    const dy = e.changedTouches[0].clientY - s.y;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx < 0 ? 1 : -1);
+  };
 
   return (
     <>
-    <aside className={`room-panel ${state.kind === 'projects' ? 'is-wide' : state.kind === 'apps' || state.kind === 'social' ? 'is-phone' : ''}`} role="dialog" aria-label={titles[state.kind]}>
+    <aside ref={fit.panel} className={`room-panel ${state.kind === 'projects' ? 'is-wide' : state.kind === 'apps' || state.kind === 'social' ? 'is-phone' : ''}`} role="dialog" aria-label={titles[state.kind]}>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-display text-2xl text-[#3b3348]">{titles[state.kind]}</h2>
-        <button onClick={onClose} aria-label={u.close} className="w-9 h-9 rounded-full bg-[#fbeee0] hover:bg-[#f6dcc4] flex items-center justify-center text-[#3b3348]">
+        <h2 className="font-display text-2xl text-[#121212]">{titles[state.kind]}</h2>
+        <button onClick={onClose} aria-label={u.close} className="w-9 h-9 bg-[#fbfbfb] hover:bg-[#f8f8f8] flex items-center justify-center text-[#121212]">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
       </div>
 
+      <div ref={fit.body}>
       {state.kind === 'projects' && (
-        <div className="space-y-4">
+        <div className="fit-stack" onTouchStart={swipeStart} onTouchEnd={swipeEnd}>
           {p.site ? (
             <Laptop host={new URL(p.site).host} onExpand={() => setFull(true)} expandLabel={u.expand}>
               <SiteFrame url={p.site} title={p.title} loadingText={u.siteLoading} />
             </Laptop>
           ) : p.image ? (
-            <div className="rounded-2xl overflow-hidden bg-[#f3ece6]">
+            <div className="overflow-hidden bg-[#fbfbfb]">
               <img src={p.image} alt={p.title} className="w-full aspect-[16/11] object-cover" />
             </div>
           ) : (
-            <div className="rounded-2xl bg-[#fbeee0] aspect-[16/11] flex flex-col items-center justify-center gap-4 p-6 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-sm">📦</div>
+            <div className="bg-[#fbfbfb] aspect-[16/11] flex flex-col items-center justify-center gap-4 p-6 text-center">
+              <div className="w-14 h-14 bg-white flex items-center justify-center text-2xl shadow-sm">📦</div>
               <div className="flex flex-wrap justify-center gap-2">
                 {p.features?.map((f) => (
-                  <span key={f} className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#3b3348]">{f}</span>
+                  <span key={f} className="bg-white px-3 py-1.5 text-xs font-bold text-[#121212]">{f}</span>
                 ))}
               </div>
             </div>
           )}
-          <div>
-            <h3 className="font-bold text-lg text-[#3b3348]">{p.title}</h3>
-            <p className="text-[#6b6070] text-sm mt-1">{p.desc}</p>
-            {p.site && !p.internal && <p className="text-xs font-bold text-[#ff7a59] mt-2">👆 {u.browse}</p>}
-            {p.internal && <p className="text-xs text-[#8a7a6c] mt-2">{u.internal}</p>}
-          </div>
-          {p.site && <button onClick={() => setFull(true)} className="room-btn w-full">⤢ {u.expand}</button>}
-          <div className="grid grid-cols-6 gap-2">
+          {/* Every project's text sits in the same grid cell, so the block is always as tall as
+              the longest one and the laptop above keeps the same size for all projects. */}
+          <div className="grid">
             {projects.map((x, k) => (
-              <button key={k} onClick={() => onPick(k)} title={x.title}
-                className={`h-2.5 rounded-full transition ${k === i ? 'bg-[#ff7a59]' : 'bg-[#f3d9bd] hover:bg-[#f0c9a4]'}`} />
+              <div key={k} aria-hidden={k !== i} className={`col-start-1 row-start-1 ${k === i ? '' : 'invisible'}`}>
+                <h3 className="fit-title font-bold text-lg text-[#121212]">{x.title}</h3>
+                <p className="fit-desc text-[#1f1f1f] text-sm mt-1">{x.desc}</p>
+                {x.site && !x.internal && <p className="fit-note text-xs font-bold text-[#121212] mt-2">👆 {u.browse}</p>}
+                {x.internal && <p className="fit-note text-xs text-[#252525] mt-2">{u.internal}</p>}
+              </div>
             ))}
+          </div>
+          {/* One row: previous, expand, next. The bars below show the position and can be tapped too. */}
+          <div>
+            <div className="flex items-stretch gap-2">
+              <button onClick={() => step(-1)} aria-label={language === 'tr' ? 'Önceki proje' : 'Previous project'}
+                className="w-11 h-11 shrink-0 border-2 border-[#121212] text-lg font-bold text-[#121212] hover:bg-[#ffe600] active:bg-[#ffe600]">←</button>
+              <button onClick={() => setFull(true)} className="room-btn flex-1 h-11" style={{ padding: '0 12px' }}>⤢ {u.expand}</button>
+              <button onClick={() => step(1)} aria-label={language === 'tr' ? 'Sonraki proje' : 'Next project'}
+                className="w-11 h-11 shrink-0 border-2 border-[#121212] text-lg font-bold text-[#121212] hover:bg-[#ffe600] active:bg-[#ffe600]">→</button>
+            </div>
+            <div className="grid grid-cols-6 mt-1">
+              {projects.map((x, k) => (
+                <button key={k} onClick={() => onPick(k)} title={x.title} aria-label={x.title} aria-current={k === i}
+                  className="group h-7 px-1 flex items-center">
+                  <span className={`block w-full h-1.5 transition ${k === i ? 'bg-[#121212]' : 'bg-[#d9d9d9] group-hover:bg-[#ffe600]'}`} />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -259,14 +338,14 @@ const Panel: React.FC<{ state: PanelState; onClose: () => void; onPick: (i: numb
       {state.kind === 'about' && (
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <img src="/assets/semih.jpg" alt="Semih Soykan" className="w-20 h-20 rounded-2xl object-cover" />
+            <img src="/assets/semih.jpg" alt="Semih Soykan" className="w-20 h-20 object-cover" />
             <div>
-              <div className="font-bold text-lg text-[#3b3348]">Semih Soykan</div>
-              <div className="text-sm text-[#6b6070]">{u.role}</div>
+              <div className="font-bold text-lg text-[#121212]">Semih Soykan</div>
+              <div className="text-sm text-[#1f1f1f]">{u.role}</div>
             </div>
           </div>
-          <p className="font-display text-lg text-[#3b3348] leading-snug">“{t.aboutQuote}”</p>
-          <p className="text-[#6b6070] text-[15px] leading-relaxed">{t.aboutBody}</p>
+          <p className="font-display text-lg text-[#121212] leading-snug">“{t.aboutQuote}”</p>
+          <p className="text-[#1f1f1f] text-[15px] leading-relaxed">{t.aboutBody}</p>
         </div>
       )}
 
@@ -281,14 +360,15 @@ const Panel: React.FC<{ state: PanelState; onClose: () => void; onPick: (i: numb
       )}
 
       {state.kind === 'contact' && <ContactForm />}
+      </div>
     </aside>
     {full && p.site && state.kind === 'projects' && (
       <div className="room-full" role="dialog" aria-label={p.title} onClick={() => setFull(false)}>
         <div className="room-full-win" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-2 px-3 py-2 bg-[#2d2a35]">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#ff7a59]" /><span className="w-2.5 h-2.5 rounded-full bg-[#ffd166]" /><span className="w-2.5 h-2.5 rounded-full bg-[#7cc7a8]" />
-            <span className="ml-2 flex-1 truncate rounded-full bg-white/10 px-3 py-1 text-xs text-white/75">{new URL(p.site).host}</span>
-            <button onClick={() => setFull(false)} className="rounded-full bg-white/15 hover:bg-white/25 px-3 py-1 text-xs font-bold text-white">{u.close} ✕</button>
+          <div className="flex items-center gap-2 px-3 py-2 bg-[#0e0e0e]">
+            <span className="w-2.5 h-2.5 bg-[#ffe600]" /><span className="w-2.5 h-2.5 bg-white" /><span className="w-2.5 h-2.5 bg-white" />
+            <span className="ml-2 flex-1 truncate bg-white/10 px-3 py-1 text-xs text-white/75">{new URL(p.site).host}</span>
+            <button onClick={() => setFull(false)} className="bg-white/15 hover:bg-white/25 px-3 py-1 text-xs font-bold text-white">{u.close} ✕</button>
           </div>
           <iframe src={p.site} title={p.title} sandbox="allow-scripts allow-same-origin allow-forms" referrerPolicy="no-referrer" className="flex-1 w-full border-0 bg-white" />
         </div>
@@ -331,6 +411,7 @@ const Experience: React.FC = () => {
     projects: [t.proj1Title, t.proj2Title, t.proj4Title, t.proj5Title, t.proj6Title, t.proj7Title],
     apps: u.apps, about: u.about, social: u.social, contact: u.contact, hello: u.hello,
     shelf: language === 'tr' ? 'Neler Yaptım' : 'My Work',
+    you: language === 'tr' ? 'Sen' : 'You',
   };
 
   const menu: PanelKind[] = ['projects', 'apps', 'about', 'social', 'contact'];
@@ -347,13 +428,13 @@ const Experience: React.FC = () => {
       {/* top bar */}
       <header className="room-top">
         <div>
-          <h1 className="font-display text-2xl sm:text-3xl text-[#3b3348] leading-none">Semih Soykan</h1>
-          <p className="text-sm text-[#8a7a6c] mt-1">{u.role}</p>
+          <h1 className="font-display text-2xl sm:text-3xl text-[#121212] leading-none">Semih Soykan</h1>
+          <p className="text-sm text-[#252525] mt-1">{u.role}</p>
         </div>
-        <div className="flex rounded-full bg-white/80 backdrop-blur p-1 text-xs font-bold shadow-sm">
+        <div className="flex bg-white p-1 text-xs font-bold border-2 border-[#121212] shadow-[4px_4px_0_#121212]">
           {(['tr', 'en'] as const).map((l) => (
             <button key={l} onClick={() => setLanguage(l)}
-              className={`px-3 py-1.5 rounded-full uppercase transition ${language === l ? 'bg-[#ff7a59] text-white' : 'text-[#6b6070] hover:text-[#3b3348]'}`}>
+              className={`px-3 py-1.5 uppercase transition ${language === l ? 'bg-[#ffe600] text-black' : 'text-[#1f1f1f] hover:text-[#121212]'}`}>
               {l}
             </button>
           ))}
