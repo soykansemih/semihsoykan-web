@@ -129,9 +129,11 @@ const SiteFrame: React.FC<{ url: string; title: string; width?: number; loadingT
   const box = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.3);
   const [loaded, setLoaded] = useState(false);
-  useEffect(() => {
+  // Measure before the first paint, so the site never shows at the wrong scale first.
+  useLayoutEffect(() => {
     const el = box.current;
     if (!el) return;
+    setScale(el.clientWidth / width);
     const ro = new ResizeObserver(([e]) => setScale(e.contentRect.width / width));
     ro.observe(el);
     return () => ro.disconnect();
@@ -215,7 +217,17 @@ const useFitPanel = (deps: unknown[]) => {
     fit();
     window.addEventListener('resize', fit);
     document.fonts?.ready.then(fit).catch(() => {});
-    return () => window.removeEventListener('resize', fit);
+    // Refit when the content's own size changes later (late styles, fonts, images),
+    // so the first open never stays at a stale, too-small size.
+    let last = -1;
+    const ro = new ResizeObserver(() => {
+      const b = body.current;
+      if (!b || b.scrollHeight === last) return;
+      fit();
+      last = b.scrollHeight;
+    });
+    if (body.current) ro.observe(body.current);
+    return () => { window.removeEventListener('resize', fit); ro.disconnect(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
   return { panel, body };
